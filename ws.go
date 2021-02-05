@@ -11,12 +11,12 @@ import (
 // NewListener 创建监听器对象，并把管道赋值给 Bot
 func (b *Bot) NewListener() (*WSListener, error) {
 	tmp, err := url.Parse(b.url)
-	wsURL := "ws://" + tmp.Host + Websocket + "?sessionKey=" + b.session
+	wsURL := "ws://" + tmp.Host + MsgEvent + "?sessionKey=" + b.session
 	if err != nil {
 		return nil, err
 	}
 
-	c := make(chan *Message, 128)
+	c := make(chan *Event, 128)
 	b.Message = c
 	q := make(chan bool, 1)
 
@@ -41,7 +41,7 @@ func (w *WSListener) StartListener() error {
 				if err != nil {
 					fmt.Println(err)
 				}
-				var tmp Message
+				var tmp Event
 				err = json.Unmarshal(msg[:n], &tmp)
 				if err != nil {
 					fmt.Println(err)

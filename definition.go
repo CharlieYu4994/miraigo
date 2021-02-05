@@ -21,7 +21,7 @@ const (
 	Verify        = "/verify"
 	SessionConfig = "/config"
 	Release       = "/release"
-	Websocket     = "/message"
+	MsgEvent      = "/message"
 )
 
 // Bot 机器人对象
@@ -30,7 +30,7 @@ type Bot struct {
 	qq      int64
 	session string
 	url     string
-	Message <-chan *Message
+	Message <-chan *Event
 	Events  []string
 }
 
@@ -38,7 +38,7 @@ type Bot struct {
 type WSListener struct {
 	url     string
 	origin  string
-	message chan<- *Message
+	message chan<- *Event
 	quit    chan bool
 }
 
@@ -124,6 +124,14 @@ type GroupConfig struct {
 	AnonymousChat     bool   `json:"anonymousChat"`
 	Name              string `json:"name,omitempty"`
 	Announcement      string `json:"announcement,omitempty"`
+}
+
+// Event 事件模型
+// 定义了在 websocket 接收的哦的 event
+type Event struct {
+	Type         string  `json:"type,omitempty"`
+	Sender       Persion `json:"sender,omitempty"`
+	MessageChain `json:"messageChain,omitempty"`
 }
 
 // PersionList 人员列表
