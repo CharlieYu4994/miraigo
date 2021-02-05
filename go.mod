@@ -1,4 +1,4 @@
-module github.com/CharlieYu/miraigo
+module github.com/CharlieYu4994/miraigo
 
 go 1.15
 
