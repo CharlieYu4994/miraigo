@@ -22,23 +22,36 @@ const (
 	SessionConfig = "/config"
 	Release       = "/release"
 	MsgEvent      = "/message"
+	EvnEvent      = "/event"
 )
+
+const ()
 
 // Bot 机器人对象
 // 定义了机器人的基本参数
 type Bot struct {
-	qq      int64
-	session string
-	url     string
-	Message <-chan *Event
-	Events  []string
+	qq          int64
+	session     string
+	url         string
+	lookupTable []*lookup
+	listeners   struct {
+		msgListener   *WSListener
+		eventListener *WSListener
+	}
+}
+
+type lookup struct {
+	typ     string // type GroupMessage id 2291598823 msg test
+	id      int64
+	msg     string
+	operate func(b Bot, m *Event)
 }
 
 // WSListener Websocket 监听器
 type WSListener struct {
 	url     string
 	origin  string
-	message chan<- *Event
+	message chan *Event
 	quit    chan bool
 }
 

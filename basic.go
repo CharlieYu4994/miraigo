@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 )
 
 func apiPostJSON(url string, data, res interface{}) error {
@@ -50,5 +51,19 @@ func checkError(resp Response) error {
 		return errors.New("Wrong Params")
 	default:
 		return errors.New("Unknown Error")
+	}
+}
+
+func worker(msg *Event, b Bot) {
+	for i := 0; i < len(b.lookupTable); i++ {
+		lookup := b.lookupTable[i]
+		condition := lookup.condition
+		if msg.Type == condition["type"] {
+			if strconv.Itoa(int(msg.Sender.ID)) == condition["id"] {
+				for j := 0; j < len(msg.MessageChain); j++ {
+					if msg.MessageChain[i].Type == "text"
+				}
+			}
+		}
 	}
 }

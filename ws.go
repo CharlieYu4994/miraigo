@@ -8,23 +8,22 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-// NewListener 创建监听器对象，并把管道赋值给 Bot
-func (b *Bot) NewListener() (*WSListener, error) {
-	tmp, err := url.Parse(b.url)
-	wsURL := "ws://" + tmp.Host + MsgEvent + "?sessionKey=" + b.session
+// newListener 创建监听器对象
+func newListener(session, origin, path string) (*WSListener, chan *Event, error) {
+	tmp, err := url.Parse(origin)
+	wsURL := "ws://" + tmp.Host + path + "?sessionKey=" + session
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	c := make(chan *Event, 128)
-	b.Message = c
 	q := make(chan bool, 1)
 
-	return &WSListener{wsURL, b.url, c, q}, nil
+	return &WSListener{wsURL, origin, c, q}, c, nil
 }
 
-// StartListener 启动监听器
-func (w *WSListener) StartListener() error {
+// startListener 启动监听器
+func (w *WSListener) startListener() error {
 	var msg = make([]byte, 16*1024)
 	ws, err := websocket.Dial(w.url, "", w.origin)
 	if err != nil {
@@ -32,10 +31,11 @@ func (w *WSListener) StartListener() error {
 	}
 
 	go func() {
+	MAINLOOP:
 		for {
 			select {
 			case <-w.quit:
-				return
+				break MAINLOOP
 			default:
 				n, err := ws.Read(msg)
 				if err != nil {
@@ -49,6 +49,11 @@ func (w *WSListener) StartListener() error {
 				w.message <- &tmp
 			}
 		}
+		ws.Close()
 	}()
 	return nil
+}
+
+func (w *WSListener) stop() {
+	w.quit <- true
 }
