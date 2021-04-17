@@ -9,17 +9,17 @@ import (
 )
 
 // newListener 创建监听器对象
-func newListener(session, origin, path string) (*WSListener, chan *Event, error) {
+func newListener(session, origin, path string) (*WSListener, error) {
 	tmp, err := url.Parse(origin)
 	wsURL := "ws://" + tmp.Host + path + "?sessionKey=" + session
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	c := make(chan *Event, 128)
 	q := make(chan bool, 1)
 
-	return &WSListener{wsURL, origin, c, q}, c, nil
+	return &WSListener{wsURL, origin, c, q}, nil
 }
 
 // startListener 启动监听器

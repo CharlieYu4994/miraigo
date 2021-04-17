@@ -2,8 +2,6 @@ package miraigo
 
 import (
 	"errors"
-	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -13,7 +11,7 @@ import (
 //         qq      int64  "机器人的 QQ 号"
 // @return *Bot  "机器人实例"
 //         error "错误"
-func NewBot(host, authkey string, qq int64) (*Bot, error) {
+func NewBot(host, authkey, qq string) (*Bot, error) {
 	session, err := getSession(host, authkey)
 	if err != nil {
 		return nil, err
@@ -26,19 +24,13 @@ func NewBot(host, authkey string, qq int64) (*Bot, error) {
 	if err != nil {
 		return nil, err
 	}
-	mws, mc, err := newListener(session, host, MsgEvent)
+	eventws, err := newListener(session, host, MsgEvent)
 	if err != nil {
 		return nil, err
 	}
-	ews, ec, err := newListener(session, host, EvnEvent)
-	if err != nil {
-		return nil, err
-	}
+
 	return &Bot{qq: qq, session: session, url: host,
-		Message: mc, Event: ec, listeners: struct {
-			msgListener   *WSListener
-			eventListener *WSListener
-		}{mws, ews}}, nil
+		eventListener: eventws}, nil
 }
 
 // Close 关闭 Bot
@@ -52,29 +44,24 @@ func (b *Bot) Close() error {
 		return err
 	}
 
-	b.listeners.msgListener.stop()
-	b.listeners.eventListener.stop()
+	b.eventListener.stop()
 
 	return checkError(res)
 }
 
 // AddEvent 注册事件
-func (b *Bot) AddEvent(condition string, operate func(b Bot, e *Event)) {
-	b.lookupTable = append(b.lookupTable, newLookup(condition, operate))
+func (b *Bot) AddEvent(condition string, operate Operate) {
+	lookup, err := newLookup(condition, operate)
+	if err != nil {
+		panic(err)
+	}
+	b.lookupTable = append(b.lookupTable, lookup)
 }
 
 // Start 开始机器人任务
 func (b *Bot) Start() error {
-	b.listeners.msgListener.startListener()
-	b.listeners.eventListener.startListener()
-	var msg, evn *Event
+	b.eventListener.startListener()
 	for {
-		select {
-		case msg = <-b.Message:
-			go 
-		case evn = <-b.Event:
-			fmt.Printf("EVN: %#v\n", evn)
-		}
 	}
 }
 
@@ -96,7 +83,7 @@ func getSession(host, authkey string) (string, error) {
 }
 
 // 激活 SessionKey
-func activeSession(host, session string, qq int64) error {
+func activeSession(host, session, qq string) error {
 	tmp := Request{SessionKey: session, QQ: qq}
 	var res Response
 
@@ -109,7 +96,7 @@ func activeSession(host, session string, qq int64) error {
 }
 
 // 设置 Session
-func setSession(host, session string, cache int32, websocket bool) error {
+func setSession(host, session string, cache int, websocket bool) error {
 	tmp := Request{SessionKey: session, Websocket: true, CacheSize: cache}
 	var res Response
 
@@ -121,17 +108,15 @@ func setSession(host, session string, cache int32, websocket bool) error {
 	return checkError(res)
 }
 
-func newLookup(c string, o func(b Bot, m *Event)) (*lookup, error) {
+func newLookup(c string, o Operate) (*lookup, error) {
 	tmp := strings.Split(c, ".")
 	if len(tmp) <= 3 {
-		return nil, errors.New("Wrong Format")
+		return nil, errors.New("WrongFormat")
 	}
 	return &lookup{
-		condition: map[string]string{
-			"type": tmp[0],
-			"id":   tmp[1],
-			"msg":  tmp[2],
-		},
+		typ:     tmp[0],
+		id:      tmp[1],
+		msg:     tmp[2],
 		operate: o,
 	}, nil
 }

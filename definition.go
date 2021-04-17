@@ -23,6 +23,7 @@ const (
 	Release       = "/release"
 	MsgEvent      = "/message"
 	EvnEvent      = "/event"
+	AllEvent      = "/all"
 )
 
 const ()
@@ -30,19 +31,16 @@ const ()
 // Bot 机器人对象
 // 定义了机器人的基本参数
 type Bot struct {
-	qq          int64
-	session     string
-	url         string
-	lookupTable []*lookup
-	listeners   struct {
-		msgListener   *WSListener
-		eventListener *WSListener
-	}
+	qq            string
+	session       string
+	url           string
+	lookupTable   []*lookup
+	eventListener *WSListener
 }
 
 type lookup struct {
 	typ     string // type GroupMessage id 2291598823 msg test
-	id      int64
+	id      string
 	msg     string
 	operate func(b Bot, m *Event)
 }
@@ -58,8 +56,8 @@ type WSListener struct {
 // Response 消息类返回信息模板
 // 定义了返回的信息与结构
 type Response struct {
-	Code         int16       `json:"code,omitempty"`
-	MessageID    int32       `json:"messageId,omitempty"`
+	Code         int         `json:"code,omitempty"`
+	MessageID    int         `json:"messageId,omitempty"`
 	Msg          string      `json:"msg,omitempty"`
 	ErrorMessage string      `json:"errorMessage,omitempty"`
 	Session      string      `json:"session,omitempty"`
@@ -74,11 +72,11 @@ type Response struct {
 // 定义了一次请求需要的数据与结构
 type Request struct {
 	Websocket    bool     `json:"enableWebsocket"`
-	Quote        int32    `json:"quote,omitempty"`
-	CacheSize    int32    `json:"cacheSize,omitempty"`
-	Target       int64    `json:"target,omitempty"`
-	QQ           int64    `json:"qq,omitempty"`
-	Group        int64    `json:"group,omitempty"`
+	Quote        int      `json:"quote,omitempty"`
+	CacheSize    int      `json:"cacheSize,omitempty"`
+	Target       string   `json:"target,omitempty"`
+	Group        string   `json:"group,omitempty"`
+	QQ           string   `json:"qq,omitempty"`
 	Authkey      string   `json:"authKey,omitempty"`
 	SessionKey   string   `json:"sessionKey,omitempty"`
 	URLs         []string `json:"urls,omitempty"`
@@ -88,13 +86,13 @@ type Request struct {
 // Message 消息模板
 // 定义了消息的组成
 type Message struct {
-	FaceID       int32  `json:"faceId,omitempty"`
-	Time         int32  `json:"time,omitempty"`
-	GroupID      int64  `json:"groupId,omitempty"`
-	ID           int64  `json:"id,omitempty"`
-	SenderID     int64  `json:"senderId,omitempty"`
-	Target       int64  `json:"target,omitempty"`
-	TargetID     int64  `json:"targetId,omitempty"`
+	FaceID       int    `json:"faceId,omitempty"`
+	Time         int    `json:"time,omitempty"`
+	GroupID      string `json:"groupId,omitempty"`
+	ID           string `json:"id,omitempty"`
+	SenderID     string `json:"senderId,omitempty"`
+	Target       string `json:"target,omitempty"`
+	TargetID     string `json:"targetId,omitempty"`
 	Content      string `json:"content,omitempty"`
 	Display      string `json:"display,omitempty"`
 	ImageID      string `json:"imageId,omitempty"`
@@ -112,7 +110,7 @@ type Message struct {
 // Persion QQ 中的人
 // 定义了 QQ 中的人的结构
 type Persion struct {
-	ID           int64  `json:"id,omitempty"`
+	ID           string `json:"id,omitempty"`
 	Nickname     string `json:"nickname,omitempty"`
 	Remaek       string `json:"remark,omitempty"`
 	MemberName   string `json:"memberName,omitempty"`
@@ -123,7 +121,7 @@ type Persion struct {
 // Group 群
 // 定义了群的结构
 type Group struct {
-	ID         int64  `json:"id,omitempty"`
+	ID         string `json:"id,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Permission string `json:"permission,omitempty"`
 }
@@ -163,3 +161,5 @@ type MessageChain []*Message
 // ImageChain 图片 ID 列表
 // 定义了图片 ID 的响应结构
 type ImageChain []string
+
+type Operate func(b Bot, m *Event)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 )
 
 func apiPostJSON(url string, data, res interface{}) error {
@@ -30,40 +29,29 @@ func checkError(resp Response) error {
 	case Success:
 		return nil
 	case WrongAuthKey:
-		return errors.New("Wrong AuthKey")
+		return errors.New("WrongAuthKey")
 	case BotNotFound:
-		return errors.New("Bot Not Found")
+		return errors.New("BotNotFound")
 	case SessionNotFound:
-		return errors.New("Session Not Found")
+		return errors.New("SessionNotFound")
 	case SessionNotActivated:
-		return errors.New("Session Not Actived")
+		return errors.New("SessionNotActived")
 	case TargetNotFound:
-		return errors.New("Target Not Found")
+		return errors.New("TargetNotFound")
 	case FileNotFound:
-		return errors.New("File Not Found")
+		return errors.New("FileNotFound")
 	case PermissionDenied:
-		return errors.New("Permission Denied")
+		return errors.New("PermissionDenied")
 	case Muted:
 		return errors.New("Muted")
 	case MessageTooLong:
-		return errors.New("Message Too Long")
+		return errors.New("MessageTooLong")
 	case WrongParams:
-		return errors.New("Wrong Params")
+		return errors.New("WrongParams")
 	default:
-		return errors.New("Unknown Error")
+		return errors.New("UnknownError")
 	}
 }
 
 func worker(msg *Event, b Bot) {
-	for i := 0; i < len(b.lookupTable); i++ {
-		lookup := b.lookupTable[i]
-		condition := lookup.condition
-		if msg.Type == condition["type"] {
-			if strconv.Itoa(int(msg.Sender.ID)) == condition["id"] {
-				for j := 0; j < len(msg.MessageChain); j++ {
-					if msg.MessageChain[i].Type == "text"
-				}
-			}
-		}
-	}
 }
