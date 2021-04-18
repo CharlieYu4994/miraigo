@@ -1,5 +1,7 @@
 package miraigo
 
+import "regexp"
+
 // 状态码定义
 const (
 	Success = iota
@@ -31,6 +33,7 @@ const ()
 // Bot 机器人对象
 // 定义了机器人的基本参数
 type Bot struct {
+	workerNum     int
 	qq            string
 	session       string
 	url           string
@@ -40,9 +43,8 @@ type Bot struct {
 
 type lookup struct {
 	typ     string // type GroupMessage id 2291598823 msg test
-	id      string
-	msg     string
-	operate func(b Bot, m *Event)
+	matcher *regexp.Regexp
+	operate func(b *Bot, m *Event)
 }
 
 // WSListener Websocket 监听器
@@ -162,4 +164,4 @@ type MessageChain []*Message
 // 定义了图片 ID 的响应结构
 type ImageChain []string
 
-type Operate func(b Bot, m *Event)
+type Operate func(b *Bot, m *Event)

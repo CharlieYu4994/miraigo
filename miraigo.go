@@ -2,16 +2,19 @@ package miraigo
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 )
 
 // NewBot 创建新的机器人实例
-// @param  host    string "mirai 的地址(应包括协议名)"
-//         authkey string "连接密钥"
-//         qq      int64  "机器人的 QQ 号"
+// @param  host      string "mirai 的地址(应包括协议名)"
+//         authkey   string "连接密钥"
+//         qq        string "机器人的 QQ 号"
+//         workerNum int    "工作线程数量"
 // @return *Bot  "机器人实例"
 //         error "错误"
-func NewBot(host, authkey, qq string) (*Bot, error) {
+//
+func NewBot(host, authkey, qq string, workerNum int) (*Bot, error) {
 	session, err := getSession(host, authkey)
 	if err != nil {
 		return nil, err
@@ -30,11 +33,12 @@ func NewBot(host, authkey, qq string) (*Bot, error) {
 	}
 
 	return &Bot{qq: qq, session: session, url: host,
-		eventListener: eventws}, nil
+		eventListener: eventws, workerNum: workerNum}, nil
 }
 
 // Close 关闭 Bot
 // @return error
+//
 func (b *Bot) Close() error {
 	tmp := Request{SessionKey: b.session, QQ: b.qq}
 	var res Response
@@ -46,10 +50,15 @@ func (b *Bot) Close() error {
 
 	b.eventListener.stop()
 
+	close(b.eventListener.message)
+
 	return checkError(res)
 }
 
 // AddEvent 注册事件
+// @param condition string "type.msg"
+//        authkey   string "操作函数"
+//
 func (b *Bot) AddEvent(condition string, operate Operate) {
 	lookup, err := newLookup(condition, operate)
 	if err != nil {
@@ -60,12 +69,19 @@ func (b *Bot) AddEvent(condition string, operate Operate) {
 
 // Start 开始机器人任务
 func (b *Bot) Start() error {
-	b.eventListener.startListener()
-	for {
+	err := b.eventListener.startListener()
+	for i := 0; i <= b.workerNum; i++ {
+		go worker(b.eventListener.message, b)
 	}
+	return err
 }
 
 // 得到 SessionKey
+// @param  host    string "mirai 的地址(应包括协议名)"
+//         authkey string "连接密钥"
+// @return sessionKey string  "SessionKey"
+//         error      error   "错误"
+//
 func getSession(host, authkey string) (string, error) {
 	tmp := Request{Authkey: authkey}
 	var res Response
@@ -83,6 +99,11 @@ func getSession(host, authkey string) (string, error) {
 }
 
 // 激活 SessionKey
+// @param  host       string "mirai 的地址(应包括协议名)"
+//         sessionKey string  "SessionKey"
+//         qq         string  "机器人的 QQ 号"
+// @return error      error   "错误"
+//
 func activeSession(host, session, qq string) error {
 	tmp := Request{SessionKey: session, QQ: qq}
 	var res Response
@@ -96,6 +117,11 @@ func activeSession(host, session, qq string) error {
 }
 
 // 设置 Session
+// @param  host       string "mirai 的地址(应包括协议名)"
+//         sessionKey string  "SessionKey"
+//         qq         string  "机器人的 QQ 号"
+// @return error      error   "错误"
+//
 func setSession(host, session string, cache int, websocket bool) error {
 	tmp := Request{SessionKey: session, Websocket: true, CacheSize: cache}
 	var res Response
@@ -110,13 +136,13 @@ func setSession(host, session string, cache int, websocket bool) error {
 
 func newLookup(c string, o Operate) (*lookup, error) {
 	tmp := strings.Split(c, ".")
-	if len(tmp) <= 3 {
+	if len(tmp) <= 2 {
 		return nil, errors.New("WrongFormat")
 	}
+	re := regexp.MustCompile(tmp[1])
 	return &lookup{
 		typ:     tmp[0],
-		id:      tmp[1],
-		msg:     tmp[2],
+		matcher: re,
 		operate: o,
 	}, nil
 }

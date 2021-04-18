@@ -53,5 +53,16 @@ func checkError(resp Response) error {
 	}
 }
 
-func worker(msg *Event, b Bot) {
+func worker(event chan *Event, b *Bot) {
+	for e := range event {
+		for _, lookup := range b.lookupTable {
+			if e.Type == lookup.typ {
+				for _, m := range e.MessageChain {
+					if lookup.matcher.MatchString(m.Text) {
+						lookup.operate(b, e)
+					}
+				}
+			}
+		}
+	}
 }
